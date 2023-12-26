@@ -10,9 +10,13 @@ from modules.shared import opts
 from transformers import MBart50TokenizerFast, MBartForConditionalGeneration
 import re
 import os
+from modules.shared import cmd_opts
 
 # The directory to store the models
-cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
+cache_dir = os.path.join(cmd_opts.data_dir, 'models')
+
+if cmd_opts.just_ui and os.environ.get('SERVICE_NAME', '') != '':
+    cache_dir = os.path.join(os.path.dirname(cmd_opts.data_dir), 'models')
 
 class MBartTranslator:
     """MBartTranslator class provides a simple interface for translating text using the MBart language model.
@@ -98,6 +102,9 @@ class MBartTranslator:
         ]
         print("Building translator")
         print("Loading generator (this may take few minutes the first time as I need to download the model)")
+        if os.path.exists('/stable-diffusion-cache/mbart-large-50-many-to-many-mmt') and os.path.exists('/stable-diffusion-cache/mbart-large-50-many-to-many-mmt/pytorch_model.bin'):
+            model_name = '/stable-diffusion-cache/mbart-large-50-many-to-many-mmt'
+            cache_dir = '/stable-diffusion-cache'
         self.model = MBartForConditionalGeneration.from_pretrained(model_name, cache_dir=cache_dir)
         print("Loading tokenizer")
         self.tokenizer = MBart50TokenizerFast.from_pretrained(model_name, src_lang=src_lang, tgt_lang=tgt_lang, cache_dir=cache_dir)
@@ -421,7 +428,7 @@ class Script(scripts.Script):
                         )
 
         self.options.visible=False
-        return [self.language]
+        return [self.language, self.enable_translation]
 
     def get_prompts(self, p):
         """Returns the original prompts and negative prompts associated with a Prompt object."""
@@ -434,10 +441,10 @@ class Script(scripts.Script):
 
         return original_prompts, original_negative_prompts
     
-    def process(self, p, language, **kwargs):
+    def process(self, p, language, is_active, **kwargs):
         """Translates the prompts from a non-English language to English using the MBartTranslator object."""
 
-        if hasattr(self, "translator") and self.is_active:
+        if hasattr(self, "translator") and is_active:
             original_prompts, original_negative_prompts = self.get_prompts(p)
             translated_prompts=[]
             previous_prompt = ""
