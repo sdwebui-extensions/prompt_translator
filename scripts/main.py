@@ -102,6 +102,7 @@ class MBartTranslator:
         ]
         print("Building translator")
         print("Loading generator (this may take few minutes the first time as I need to download the model)")
+        global cache_dir
         if os.path.exists('/stable-diffusion-cache/mbart-large-50-many-to-many-mmt') and os.path.exists('/stable-diffusion-cache/mbart-large-50-many-to-many-mmt/pytorch_model.bin'):
             model_name = '/stable-diffusion-cache/mbart-large-50-many-to-many-mmt'
             cache_dir = '/stable-diffusion-cache'
